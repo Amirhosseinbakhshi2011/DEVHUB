@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, MessageCircle, Code2 } from "lucide-react";
+import { Heart, MessageCircle, Code2, Trash2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 type Author = {
@@ -20,6 +20,7 @@ type Post = {
   codeSnippet: string | null;
   language: string | null;
   createdAt: string | Date;
+  isEdited?: boolean;
   author: Author;
   _count: { likes: number; comments: number };
   likes?: { userId: string }[];
@@ -33,6 +34,8 @@ export function PostCard({
   currentUserId?: string;
 }) {
   const router = useRouter();
+  const isOwner = currentUserId === post.author.id;
+
   const [liked, setLiked] = useState(
     !!currentUserId && post.likes?.some((l) => l.userId === currentUserId)
   );
@@ -45,6 +48,17 @@ export function PostCard({
   const [commentText, setCommentText] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [editCode, setEditCode] = useState(post.codeSnippet ?? "");
+  const [editLang, setEditLang] = useState(post.language ?? "typescript");
+  const [displayContent, setDisplayContent] = useState(post.content);
+  const [displayCode, setDisplayCode] = useState(post.codeSnippet);
+  const [displayLang, setDisplayLang] = useState(post.language);
+  const [isEdited, setIsEdited] = useState(!!post.isEdited);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [hidden, setHidden] = useState(false);
 
   const username = post.author.profile?.username ?? "user";
   const displayName =
@@ -102,6 +116,50 @@ export function PostCard({
     }
   }
 
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editContent.trim()) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: editContent.trim(),
+          codeSnippet: editCode.trim() || null,
+          language: editCode.trim() ? editLang : null,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setDisplayContent(data.post.content);
+        setDisplayCode(data.post.codeSnippet);
+        setDisplayLang(data.post.language);
+        setIsEdited(true);
+        setEditing(false);
+        router.refresh();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function deletePost() {
+    if (!confirm("این پست حذف شود؟")) return;
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+      if (res.ok) {
+        setHidden(true);
+        router.refresh();
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  if (hidden) return null;
+
   const time = new Date(post.createdAt).toLocaleString("fa-IR", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -122,27 +180,77 @@ export function PostCard({
           </Link>
           <p className="text-xs text-slate-500" dir="ltr">
             @{username} · {time}
+            {isEdited ? " · ویرایش‌شده" : ""}
           </p>
         </div>
+        {isOwner && !editing && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="p-1.5 rounded-md text-slate-400 hover:text-primary hover:bg-slate-50"
+              title="ویرایش"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={deletePost}
+              disabled={deleting}
+              className="p-1.5 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50"
+              title="حذف"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </header>
 
-      <div className="text-slate-800 whitespace-pre-wrap text-[15px] leading-relaxed">
-        {post.content}
-      </div>
-
-      {post.codeSnippet && (
-        <div className="rounded-lg border border-slate-200 bg-slate-950 overflow-hidden">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-xs text-slate-400 border-b border-slate-800">
-            <Code2 className="h-3.5 w-3.5" />
-            {post.language ?? "code"}
-          </div>
-          <pre
-            className="p-3 overflow-x-auto text-sm text-slate-100 font-mono leading-relaxed"
+      {editing ? (
+        <form onSubmit={saveEdit} className="space-y-3">
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="input resize-none"
+            rows={3}
+            disabled={saving}
+            maxLength={5000}
+          />
+          <textarea
+            value={editCode}
+            onChange={(e) => setEditCode(e.target.value)}
+            placeholder="کد (اختیاری)"
+            className="input font-mono text-sm resize-y"
+            rows={4}
             dir="ltr"
-          >
-            <code>{post.codeSnippet}</code>
-          </pre>
-        </div>
+            disabled={saving}
+          />
+          <div className="flex gap-2 justify-end">
+            <button type="button" onClick={() => setEditing(false)} className="btn-secondary text-sm" disabled={saving}>
+              انصراف
+            </button>
+            <button type="submit" className="btn-primary text-sm" disabled={saving}>
+              {saving ? "ذخیره..." : "ذخیره"}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <div className="text-slate-800 whitespace-pre-wrap text-[15px] leading-relaxed">
+            {displayContent}
+          </div>
+          {displayCode && (
+            <div className="rounded-lg border border-slate-200 bg-slate-950 overflow-hidden">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-900 text-xs text-slate-400 border-b border-slate-800">
+                <Code2 className="h-3.5 w-3.5" />
+                {displayLang ?? "code"}
+              </div>
+              <pre className="p-3 overflow-x-auto text-sm text-slate-100 font-mono leading-relaxed" dir="ltr">
+                <code>{displayCode}</code>
+              </pre>
+            </div>
+          )}
+        </>
       )}
 
       <footer className="flex items-center gap-4 pt-1 border-t border-slate-100">
@@ -185,16 +293,13 @@ export function PostCard({
                 </div>
                 <div>
                   <span className="font-medium text-slate-800">
-                    {c.author.profile?.displayName ??
-                      c.author.profile?.username ??
-                      "کاربر"}
+                    {c.author.profile?.displayName ?? c.author.profile?.username ?? "کاربر"}
                   </span>
                   <p className="text-slate-700 mt-0.5 whitespace-pre-wrap">{c.content}</p>
                 </div>
               </div>
             ))
           )}
-
           {currentUserId && (
             <form onSubmit={submitComment} className="flex gap-2">
               <input
@@ -205,11 +310,7 @@ export function PostCard({
                 disabled={submittingComment}
                 maxLength={2000}
               />
-              <button
-                type="submit"
-                disabled={submittingComment || !commentText.trim()}
-                className="btn-primary text-sm px-3"
-              >
+              <button type="submit" disabled={submittingComment || !commentText.trim()} className="btn-primary text-sm px-3">
                 ارسال
               </button>
             </form>
