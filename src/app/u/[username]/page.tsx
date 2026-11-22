@@ -5,6 +5,7 @@ import { MapPin, Link as LinkIcon, Github, Calendar } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PostCard } from "@/components/feed/post-card";
+import { FollowButton } from "@/components/profile/follow-button";
 
 type Props = { params: Promise<{ username: string }> };
 
@@ -72,6 +73,19 @@ export default async function ProfilePage({ params }: Props) {
     month: "long",
   });
 
+  let isFollowing = false;
+  if (session?.user?.id && !isOwner) {
+    const follow = await prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: session.user.id,
+          followingId: profile.userId,
+        },
+      },
+    });
+    isFollowing = !!follow;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
@@ -85,17 +99,11 @@ export default async function ProfilePage({ params }: Props) {
           <nav className="flex items-center gap-4 text-sm">
             {session ? (
               <>
-                <Link href="/feed" className="text-slate-600 hover:text-primary">
-                  فید
-                </Link>
-                <Link href="/api/auth/signout" className="text-primary hover:underline">
-                  خروج
-                </Link>
+                <Link href="/feed" className="text-slate-600 hover:text-primary">فید</Link>
+                <Link href="/api/auth/signout" className="text-primary hover:underline">خروج</Link>
               </>
             ) : (
-              <Link href="/login" className="btn-primary text-sm">
-                ورود
-              </Link>
+              <Link href="/login" className="btn-primary text-sm">ورود</Link>
             )}
           </nav>
         </div>
@@ -110,104 +118,56 @@ export default async function ProfilePage({ params }: Props) {
                 <div className="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-primary/10 text-2xl font-bold text-primary shadow-sm">
                   {(profile.displayName?.[0] ?? profile.username[0]).toUpperCase()}
                 </div>
-                {isOwner && (
-                  <Link href="/settings/profile" className="btn-secondary text-sm">
-                    ویرایش پروفایل
-                  </Link>
-                )}
+                {isOwner ? (
+                  <Link href="/settings/profile" className="btn-secondary text-sm">ویرایش پروفایل</Link>
+                ) : session?.user ? (
+                  <FollowButton
+                    userId={profile.userId}
+                    initialFollowing={isFollowing}
+                    initialFollowersCount={profile.user._count.followers}
+                  />
+                ) : null}
               </div>
 
               <div className="mt-3">
-                <h1 className="text-xl font-bold text-slate-900">
-                  {profile.displayName ?? profile.username}
-                </h1>
-                <p className="text-slate-500" dir="ltr">
-                  @{profile.username}
-                </p>
+                <h1 className="text-xl font-bold text-slate-900">{profile.displayName ?? profile.username}</h1>
+                <p className="text-slate-500" dir="ltr">@{profile.username}</p>
               </div>
 
               {profile.bio && (
-                <p className="mt-3 text-slate-700 leading-relaxed whitespace-pre-wrap">
-                  {profile.bio}
-                </p>
+                <p className="mt-3 text-slate-700 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
               )}
 
               <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-600">
                 {profile.location && (
-                  <span className="inline-flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {profile.location}
-                  </span>
+                  <span className="inline-flex items-center gap-1"><MapPin className="h-4 w-4" />{profile.location}</span>
                 )}
                 {profile.website && (
-                  <a
-                    href={profile.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-primary"
-                    dir="ltr"
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                    {profile.website.replace(/^https?:\/\//, "")}
+                  <a href={profile.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-primary" dir="ltr">
+                    <LinkIcon className="h-4 w-4" />{profile.website.replace(/^https?:\/\//, "")}
                   </a>
                 )}
                 {profile.githubUrl && (
-                  <a
-                    href={profile.githubUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 hover:text-primary"
-                  >
-                    <Github className="h-4 w-4" />
-                    GitHub
+                  <a href={profile.githubUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:text-primary">
+                    <Github className="h-4 w-4" />GitHub
                   </a>
                 )}
-                <span className="inline-flex items-center gap-1">
-                  <Calendar className="h-4 w-4" />
-                  عضویت از {joined}
-                </span>
+                <span className="inline-flex items-center gap-1"><Calendar className="h-4 w-4" />عضویت از {joined}</span>
               </div>
 
               <div className="mt-4 flex gap-6 text-sm">
-                <div>
-                  <span className="font-semibold text-slate-900">{profile.user._count.posts}</span>{" "}
-                  <span className="text-slate-500">پست</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-900">{profile.user._count.followers}</span>{" "}
-                  <span className="text-slate-500">دنبال‌کننده</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-900">{profile.user._count.following}</span>{" "}
-                  <span className="text-slate-500">دنبال‌شده</span>
-                </div>
-                <div>
-                  <span className="font-semibold text-slate-900">{profile.reputation}</span>{" "}
-                  <span className="text-slate-500">اعتبار</span>
-                </div>
+                <div><span className="font-semibold text-slate-900">{profile.user._count.posts}</span> <span className="text-slate-500">پست</span></div>
+                <div><span className="font-semibold text-slate-900">{profile.user._count.followers}</span> <span className="text-slate-500">دنبال‌کننده</span></div>
+                <div><span className="font-semibold text-slate-900">{profile.user._count.following}</span> <span className="text-slate-500">دنبال‌شده</span></div>
+                <div><span className="font-semibold text-slate-900">{profile.reputation}</span> <span className="text-slate-500">اعتبار</span></div>
               </div>
-
-              {profile.skills.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {profile.skills.map((us) => (
-                    <span
-                      key={us.id}
-                      className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
-                    >
-                      {us.skill.name}
-                    </span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
 
           <div className="space-y-4">
             <h2 className="text-lg font-semibold text-slate-900">پست‌ها</h2>
             {profile.user.posts.length === 0 ? (
-              <div className="card p-6 text-center text-slate-500 text-sm">
-                هنوز پستی منتشر نشده است.
-              </div>
+              <div className="card p-6 text-center text-slate-500 text-sm">هنوز پستی منتشر نشده است.</div>
             ) : (
               profile.user.posts.map((post) => (
                 <PostCard
