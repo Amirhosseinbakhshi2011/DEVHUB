@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyFollow } from "@/lib/notifications";
 
 type Params = { params: Promise<{ userId: string }> };
 
@@ -48,23 +49,17 @@ export async function POST(_request: Request, { params }: Params) {
       },
     });
 
-    try {
-      const me = await prisma.developerProfile.findUnique({
-        where: { userId: session.user.id },
-        select: { username: true, displayName: true },
-      });
-      await prisma.notification.create({
-        data: {
-          userId,
-          type: "FOLLOW",
-          title: "دنبال‌کننده جدید",
-          body: `${me?.displayName ?? me?.username ?? "یک کاربر"} شما را دنبال کرد`,
-          data: { followerId: session.user.id, username: me?.username },
-        },
-      });
-    } catch {
-      // ignore notification errors
-    }
+    const me = await prisma.developerProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { username: true, displayName: true },
+    });
+
+    await notifyFollow({
+      targetUserId: userId,
+      actorId: session.user.id,
+      actorName: me?.displayName ?? me?.username ?? "یک کاربر",
+      actorUsername: me?.username,
+    });
 
     const count = await prisma.follow.count({ where: { followingId: userId } });
     return NextResponse.json({ following: true, followersCount: count });

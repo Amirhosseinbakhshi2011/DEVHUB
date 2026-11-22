@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { notifyPostLike } from "@/lib/notifications";
 
 type Params = { params: Promise<{ postId: string }> };
 
@@ -34,6 +35,21 @@ export async function POST(_request: Request, { params }: Params) {
     await prisma.postLike.create({
       data: { postId, userId: session.user.id },
     });
+
+    const actorProfile = await prisma.developerProfile.findUnique({
+      where: { userId: session.user.id },
+      select: { displayName: true, username: true },
+    });
+    const actorName =
+      actorProfile?.displayName ?? actorProfile?.username ?? "یک کاربر";
+
+    await notifyPostLike({
+      postAuthorId: post.authorId,
+      actorId: session.user.id,
+      postId,
+      actorName,
+    });
+
     const count = await prisma.postLike.count({ where: { postId } });
     return NextResponse.json({ liked: true, count });
   } catch (error) {
