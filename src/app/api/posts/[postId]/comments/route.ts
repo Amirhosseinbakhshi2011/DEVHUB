@@ -3,13 +3,13 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { createCommentSchema } from "@/lib/validations/post";
+import { notifyPostComment } from "@/lib/notifications";
 
 type Params = { params: Promise<{ postId: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
   try {
     const { postId } = await params;
-
     const comments = await prisma.postComment.findMany({
       where: { postId, parentId: null },
       orderBy: { createdAt: "asc" },
@@ -17,13 +17,7 @@ export async function GET(_request: Request, { params }: Params) {
         author: {
           select: {
             id: true,
-            profile: {
-              select: {
-                username: true,
-                displayName: true,
-                avatarUrl: true,
-              },
-            },
+            profile: { select: { username: true, displayName: true, avatarUrl: true } },
           },
         },
         replies: {
@@ -32,20 +26,13 @@ export async function GET(_request: Request, { params }: Params) {
             author: {
               select: {
                 id: true,
-                profile: {
-                  select: {
-                    username: true,
-                    displayName: true,
-                    avatarUrl: true,
-                  },
-                },
+                profile: { select: { username: true, displayName: true, avatarUrl: true } },
               },
             },
           },
         },
       },
     });
-
     return NextResponse.json({ comments });
   } catch (error) {
     console.error("[COMMENTS_GET]", error);
@@ -97,16 +84,24 @@ export async function POST(request: Request, { params }: Params) {
         author: {
           select: {
             id: true,
-            profile: {
-              select: {
-                username: true,
-                displayName: true,
-                avatarUrl: true,
-              },
-            },
+            profile: { select: { username: true, displayName: true, avatarUrl: true } },
           },
         },
       },
+    });
+
+    const actorName =
+      comment.author.profile?.displayName ??
+      comment.author.profile?.username ??
+      "یک کاربر";
+
+    await notifyPostComment({
+      postAuthorId: post.authorId,
+      actorId: session.user.id,
+      postId,
+      commentId: comment.id,
+      actorName,
+      preview: content.trim(),
     });
 
     return NextResponse.json({ comment }, { status: 201 });
