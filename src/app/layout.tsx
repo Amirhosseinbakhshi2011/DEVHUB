@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Vazirmatn } from "next/font/google";
+import { AuthSessionProvider } from "@/components/providers/session-provider";
 import "@/styles/globals.css";
 
 const vazirmatn = Vazirmatn({
@@ -15,7 +16,14 @@ export const metadata: Metadata = {
   },
   description:
     "شبکه اجتماعی حرفه‌ای برای توسعه‌دهندگان. ترکیب بهترین ویژگی‌های GitHub، LinkedIn و Stack Overflow در یک پلتفرم واحد.",
-  keywords: ["developers", "social network", "programming", "Q&A", "jobs", "open source"],
+  keywords: [
+    "developers",
+    "social network",
+    "programming",
+    "Q&A",
+    "jobs",
+    "open source",
+  ],
 };
 
 export default function RootLayout({
@@ -25,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fa" dir="rtl" className={vazirmatn.variable}>
-      <body className="min-h-screen bg-background font-sans">{children}</body>
+      <body className="min-h-screen bg-background font-sans">
+        <AuthSessionProvider>{children}</AuthSessionProvider>
+      </body>
     </html>
   );
 }
