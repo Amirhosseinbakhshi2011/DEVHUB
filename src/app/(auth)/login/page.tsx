@@ -1,15 +1,56 @@
-import Link from "next/link";
+"use client";
 
-export const metadata = {
-  title: "ورود",
-};
+import { useState } from "react";
+import Link from "next/link";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email: email.trim(),
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError(result.error);
+        setLoading(false);
+        return;
+      }
+
+      router.push("/feed");
+      router.refresh();
+    } catch {
+      setError("خطایی رخ داد. دوباره تلاش کنید");
+      setLoading(false);
+    }
+  }
+
+  async function handleOAuth(provider: "github" | "google") {
+    setLoading(true);
+    await signIn(provider, { callbackUrl: "/feed" });
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 font-bold text-xl text-slate-900">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 font-bold text-xl text-slate-900"
+          >
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-white text-sm">
               DH
             </span>
@@ -25,7 +66,13 @@ export default function LoginPage() {
         </div>
 
         <div className="card p-6 space-y-4">
-          <form className="space-y-4">
+          {error && (
+            <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1.5">
                 ایمیل
@@ -35,9 +82,13 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 required
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input"
                 placeholder="you@example.com"
                 dir="ltr"
+                disabled={loading}
               />
             </div>
             <div>
@@ -49,9 +100,13 @@ export default function LoginPage() {
                 name="password"
                 type="password"
                 required
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="input"
                 placeholder="••••••••"
                 dir="ltr"
+                disabled={loading}
               />
             </div>
             <div className="flex items-center justify-between text-sm">
@@ -63,8 +118,8 @@ export default function LoginPage() {
                 فراموشی رمز
               </Link>
             </div>
-            <button type="submit" className="btn-primary w-full py-2.5">
-              ورود
+            <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
+              {loading ? "در حال ورود..." : "ورود"}
             </button>
           </form>
 
@@ -78,18 +133,24 @@ export default function LoginPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <button type="button" className="btn-secondary gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => handleOAuth("github")}
+              disabled={loading}
+              className="btn-secondary gap-2 text-sm"
+            >
               GitHub
             </button>
-            <button type="button" className="btn-secondary gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => handleOAuth("google")}
+              disabled={loading}
+              className="btn-secondary gap-2 text-sm"
+            >
               Google
             </button>
           </div>
         </div>
-
-        <p className="mt-6 text-center text-xs text-slate-500">
-          با ورود، شرایط استفاده و حریم خصوصی را می‌پذیرید.
-        </p>
       </div>
     </div>
   );
