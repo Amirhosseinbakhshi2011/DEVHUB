@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CreatePostForm } from "@/components/feed/create-post-form";
 import { PostCard } from "@/components/feed/post-card";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export const metadata = {
   title: "فید",
@@ -66,7 +67,8 @@ export default async function FeedPage() {
               </Link>
             )}
           </nav>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-3 text-sm">
+            <NotificationBell />
             <span className="text-slate-600 hidden sm:inline">
               {session.user.username
                 ? `@${session.user.username}`
