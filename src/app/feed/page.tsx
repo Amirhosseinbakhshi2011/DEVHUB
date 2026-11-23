@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { CreatePostForm } from "@/components/feed/create-post-form";
 import { PostCard } from "@/components/feed/post-card";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 export const metadata = {
   title: "فید",
@@ -58,6 +59,12 @@ export default async function FeedPage() {
             <Link href="/feed" className="text-primary font-medium">
               فید
             </Link>
+            <Link href="/questions" className="hover:text-primary transition">
+              سؤالات
+            </Link>
+            <Link href="/jobs" className="hover:text-primary transition">
+              مشاغل
+            </Link>
             {session.user.username && (
               <Link
                 href={`/u/${session.user.username}`}
@@ -74,9 +81,7 @@ export default async function FeedPage() {
                 ? `@${session.user.username}`
                 : session.user.email}
             </span>
-            <Link href="/api/auth/signout" className="text-primary hover:underline">
-              خروج
-            </Link>
+            <SignOutButton />
           </div>
         </div>
       </header>

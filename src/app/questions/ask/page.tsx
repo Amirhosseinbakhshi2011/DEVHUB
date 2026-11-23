@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -14,9 +14,11 @@ export default function AskQuestionPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (status === "unauthenticated") {
-    router.push("/login");
-  }
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -62,6 +64,14 @@ export default function AskQuestionPage() {
       setError("خطای شبکه");
       setLoading(false);
     }
+  }
+
+  if (status === "loading" || status === "unauthenticated") {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-500 text-sm">
+        در حال بارگذاری...
+      </div>
+    );
   }
 
   return (
