@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PostCard } from "@/components/feed/post-card";
 import { FollowButton } from "@/components/profile/follow-button";
+import { SignOutButton } from "@/components/auth/sign-out-button";
 
 type Props = { params: Promise<{ username: string }> };
 
@@ -91,16 +92,16 @@ export default async function ProfilePage({ params }: Props) {
       <header className="border-b border-slate-200 bg-white sticky top-0 z-50">
         <div className="container-app flex h-14 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 font-bold text-slate-900">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white text-xs">
-              DH
-            </span>
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-white text-xs">DH</span>
             DEVHUB
           </Link>
           <nav className="flex items-center gap-4 text-sm">
             {session ? (
               <>
                 <Link href="/feed" className="text-slate-600 hover:text-primary">فید</Link>
-                <Link href="/api/auth/signout" className="text-primary hover:underline">خروج</Link>
+                <Link href="/questions" className="text-slate-600 hover:text-primary">سؤالات</Link>
+                <Link href="/jobs" className="text-slate-600 hover:text-primary">مشاغل</Link>
+                <SignOutButton />
               </>
             ) : (
               <Link href="/login" className="btn-primary text-sm">ورود</Link>
