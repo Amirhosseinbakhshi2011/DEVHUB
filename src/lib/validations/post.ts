@@ -16,7 +16,7 @@ export const createCommentSchema = z.object({
     .string()
     .min(1, "کامنت نمی‌تواند خالی باشد")
     .max(2000, "حداکثر ۲۰۰۰ کاراکتر"),
-  parentId: z.string().cuid().optional().nullable(),
+  parentId: z.string().min(1).optional().nullable(),
 });
 
 export type CreateCommentInput = z.infer<typeof createCommentSchema>;
