@@ -114,9 +114,7 @@ export default function LoginPage() {
                 <input type="checkbox" className="rounded border-slate-300" />
                 مرا به خاطر بسپار
               </label>
-              <Link href="/forgot-password" className="text-primary hover:underline">
-                فراموشی رمز
-              </Link>
+              <span className="text-slate-400 text-xs">فراموشی رمز (به زودی)</span>
             </div>
             <button type="submit" disabled={loading} className="btn-primary w-full py-2.5">
               {loading ? "در حال ورود..." : "ورود"}

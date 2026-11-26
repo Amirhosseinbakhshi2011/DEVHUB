@@ -46,10 +46,9 @@ export default function HomePage() {
             DEVHUB
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm text-slate-600">
-            <Link href="/explore" className="hover:text-primary transition">کاوش</Link>
+            <Link href="/feed" className="hover:text-primary transition">فید</Link>
             <Link href="/questions" className="hover:text-primary transition">پرسش‌ها</Link>
             <Link href="/jobs" className="hover:text-primary transition">فرصت‌ها</Link>
-            <Link href="/articles" className="hover:text-primary transition">مقالات</Link>
           </nav>
           <div className="flex items-center gap-3">
             <Link href="/login" className="btn-secondary text-sm">ورود</Link>
@@ -70,7 +69,7 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/register" className="btn-primary px-8 py-3 text-base">شروع رایگان</Link>
-            <Link href="/explore" className="btn-secondary px-8 py-3 text-base">کاوش جامعه</Link>
+            <Link href="/questions" className="btn-secondary px-8 py-3 text-base">کاوش جامعه</Link>
           </div>
         </div>
       </section>
